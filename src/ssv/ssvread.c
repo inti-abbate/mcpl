@@ -41,9 +41,26 @@ void ssv_error(const char * msg) {
 
 typedef struct {
   FILE * file;
+  int ncomments;
+  char** comments;
   ssv_particle_t part;
   char line[SSVREAD_MAXLINESIZE];//for holding line from file
 } ssv_fileinternal_t;
+
+int ssv_get_ncomment(ssv_file_t * ff){
+  ssv_fileinternal_t * f = (ssv_fileinternal_t *)ff->internal;
+  assert(f);
+
+  return f->ncomments;
+}
+
+char* ssv_get_comment(ssv_file_t * ff, int i){
+  ssv_fileinternal_t * f = (ssv_fileinternal_t *)ff->internal;
+  assert(f);
+
+  if(i < f->ncomments) return f->comments[i];
+  return NULL;
+}
 
 ssv_file_t ssv_open_internal( const char * filename )
 {
@@ -58,18 +75,26 @@ ssv_file_t ssv_open_internal( const char * filename )
     ssv_error("Unable to open file!");
 
   // Procesar header
-  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) // SSV
-    ssv_error("Unexpected format in SSV file");
-  if(strcmp(f->line, "#MCPL-ASCII\n"))
-    ssv_error("Unexpected format in SSV file");
-  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) // ASCII-FORMAT: v1
-    ssv_error("Unexpected format in SSV file");
-  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) // NPARTICLES
-    ssv_error("Unexpected format in SSV file");
-  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) // END-HEADER
-    ssv_error("Unexpected format in SSV file");
-  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) // Variable names
-    ssv_error("Unexpected format in SSV file");
+  f->ncomments = 0;
+  f->comments = NULL;
+  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // SSV
+  if(strcmp(f->line, "#MCPL-ASCII\n") != 0) ssv_error("Unexpected format in SSV file");
+  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // ASCII-FORMAT: v1
+  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // NPARTICLES
+  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // END-HEADER / NCOMMENTS
+  if(strcmp(f->line, "#END-HEADER\n") != 0)
+    sscanf(f->line, "#NCOMMENTS: %d", &f->ncomments);
+  if(f->ncomments){
+    f->comments = (char**)malloc(f->ncomments*sizeof(char*));
+    int i;
+    for(i=0; i<f->ncomments; i++){
+      f->comments[i] = (char*)malloc(SSVREAD_MAXLINESIZE*sizeof(char*));
+      if(!fgets(f->comments[i], SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // COMMENT[i]
+      f->comments[i][strcspn(f->comments[i], "\n")] = 0;
+    }
+    if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // END-HEADER
+  }
+  if(!fgets(f->line, SSVREAD_MAXLINESIZE, f->file)) ssv_error("Unexpected format in SSV file"); // Variable names
 
   const char * bn = strrchr(filename, '/');
   bn = bn ? bn + 1 : filename;

@@ -1,6 +1,9 @@
 #MCPL-ASCII
 #ASCII-FORMAT: v1
 #NPARTICLES: 64
+#NCOMMENTS: 2
+Comment 1
+Comment 2...
 #END-HEADER
 index     pdgcode               ekin[MeV]                   x[cm]                   y[cm]                   z[cm]                      ux                      uy                      uz                time[ms]                  weight                   pol-x                   pol-y                   pol-z  userflags
     0        2112 3.47369990549850627e-08    -123.480003356933594     90.6859970092773438     -1.4514000415802002   -0.948694166783049964    0.283021241426467896   -0.140990619593062111     2.42400002479553223     0.51996999979019165                       0                       0                       0 0x00000000

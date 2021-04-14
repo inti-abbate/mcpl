@@ -46,6 +46,8 @@
 
 //fwd declare internal functions from ssvread.c
 void ssv_error(const char * msg);
+int ssv_get_ncomment(ssv_file_t * ff);
+char* ssv_get_comment(ssv_file_t * ff, int i);
 
 int ssv2mcpl(const char * ssvfile, const char * mcplfile)
 {
@@ -59,6 +61,10 @@ int ssv2mcpl2(const char * ssvfile, const char * mcplfile,
   mcpl_outfile_t mcplfh = mcpl_create_outfile(mcplfile);
 
   mcpl_hdr_set_srcname(mcplfh,"ASCII SSV");
+
+  int i;
+  for(i=0; i<ssv_get_ncomment(&f); i++)
+    mcpl_hdr_add_comment(mcplfh, ssv_get_comment(&f, i));
 
   if (opt_dp) {
     mcpl_enable_doubleprec(mcplfh);
